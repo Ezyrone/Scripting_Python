@@ -1,41 +1,39 @@
-import wikipediaapi
-import random
+# pylint: disable=import-error
+import requests
+from bs4 import BeautifulSoup
 
-# Initialisation de l'API Wikipédia
-wiki = wikipediaapi.Wikipedia('en')
+WIKI_BASE_URL = 'https://fr.wikipedia.org/wiki/'
 
 def get_random_page():
-    # Fonction pour obtenir une page Wikipédia au hasard
-    random_page = wiki.random(pages=1)
-    return random_page
+    # Obtenir une page Wikipédia aléatoire
+    response = requests.get('https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Page_au_hasard')
+    return response.url.split('/')[-1]
 
-def get_links(page):
-    # Fonction pour obtenir les liens d'une page
-    return page.links
+def get_page_links(page_title):
+    # Obtenir les liens d'une page Wikipédia
+    url = f'{WIKI_BASE_URL}{page_title}'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    content_div = soup.find(id='bodyContent')
+    links = content_div.find_all('a', href=True)
+    page_links = {link.get_text(): link['href'].split('/')[-1] for link in links if link['href'].startswith('/wiki/') and ':' not in link['href']}
+    return page_links
 
 def main():
     # Sélectionner deux pages au hasard
     start_page_name = get_random_page()
     target_page_name = get_random_page()
     
-    # Charger les pages
-    start_page = wiki.page(start_page_name)
-    target_page = wiki.page(target_page_name)
-    
-    if not start_page.exists() or not target_page.exists():
-        print("Une des pages sélectionnées n'existe pas. Réessayez.")
-        return
-    
     print("************************ WikiGame **** tour 1")
-    print(f"Départ : {start_page.title}")
-    print(f"Cible : {target_page.title}")
-    current_page = start_page
+    print(f"Départ : {start_page_name.replace('_', ' ')}")
+    print(f"Cible : {target_page_name.replace('_', ' ')}")
+    current_page_name = start_page_name
     
     # Boucle du jeu
     tour = 1
-    while current_page.title != target_page.title:
-        print(f"Actuellement : {current_page.title}")
-        links = get_links(current_page)
+    while current_page_name != target_page_name:
+        print(f"Actuellement : {current_page_name.replace('_', ' ')}")
+        links = get_page_links(current_page_name)
         link_names = list(links.keys())
         
         # Afficher les liens disponibles
@@ -49,10 +47,10 @@ def main():
             continue
         
         # Mettre à jour la page actuelle
-        current_page = wiki.page(link_names[choice])
+        current_page_name = links[link_names[choice]]
         tour += 1
     
-    print(f"Félicitations ! Vous avez atteint la page {target_page.title} en {tour} tours.")
+    print(f"Félicitations ! Vous avez atteint la page {target_page_name.replace('_', ' ')} en {tour} tours.")
 
 if __name__ == "__main__":
     main()
