@@ -12,25 +12,27 @@ class WikiGameGUI:
         self.root = root
         self.root.title("WikiGame")
         
-        self.start_page_name = self.get_random_page()
-        self.target_page_name = self.get_random_page()
-        self.current_page_name = self.start_page_name
+        self.start_page_name = ""
+        self.target_page_name = ""
+        self.current_page_name = ""
+        self.start_time = None
         
         self.create_widgets()
-        self.show_current_page()
-        self.start_timer(GAME_DURATION)
     
     def create_widgets(self):
         self.label_title = tk.Label(self.root, text="WikiGame", font=("Arial", 18))
         self.label_title.pack(pady=10)
         
-        self.label_start = tk.Label(self.root, text=f"Départ : {self.start_page_name.replace('_', ' ')}", font=("Arial", 12))
+        self.button_start = tk.Button(self.root, text="Start", command=self.start_game)
+        self.button_start.pack()
+        
+        self.label_start = tk.Label(self.root, text="", font=("Arial", 12))
         self.label_start.pack()
         
-        self.label_target = tk.Label(self.root, text=f"Cible : {self.target_page_name.replace('_', ' ')}", font=("Arial", 12))
+        self.label_target = tk.Label(self.root, text="", font=("Arial", 12))
         self.label_target.pack()
         
-        self.label_current = tk.Label(self.root, text=f"Actuellement : {self.current_page_name.replace('_', ' ')}", font=("Arial", 12))
+        self.label_current = tk.Label(self.root, text="", font=("Arial", 12))
         self.label_current.pack(pady=10)
         
         self.listbox_links = tk.Listbox(self.root, width=80, height=15)
@@ -42,7 +44,15 @@ class WikiGameGUI:
         self.label_timer = tk.Label(self.root, text="Temps restant : 10:00", font=("Arial", 12))
         self.label_timer.pack(pady=10)
         
-        self.show_links()
+        self.button_reset = tk.Button(self.root, text="Reset", command=self.reset_game)
+        self.button_reset.pack(pady=10)
+    
+    def start_game(self):
+        self.start_page_name = self.get_random_page()
+        self.target_page_name = self.get_random_page()
+        self.current_page_name = self.start_page_name
+        self.show_current_page()
+        self.start_timer(GAME_DURATION)
     
     def get_random_page(self):
         # Obtenir une page Wikipédia aléatoire
@@ -61,6 +71,8 @@ class WikiGameGUI:
         return page_links
     
     def show_current_page(self):
+        self.label_start.config(text=f"Départ : {self.start_page_name.replace('_', ' ')}")
+        self.label_target.config(text=f"Cible : {self.target_page_name.replace('_', ' ')}")
         self.label_current.config(text=f"Actuellement : {self.current_page_name.replace('_', ' ')}")
         self.show_links()
     
@@ -79,12 +91,13 @@ class WikiGameGUI:
             self.show_current_page()
             if self.current_page_name == self.target_page_name:
                 self.stop_timer()
-                messagebox.showinfo("Félicitations", f"Vous avez atteint la page {self.target_page_name.replace('_', ' ')} !")
+                self.calculate_score()
         except IndexError:
             messagebox.showwarning("Avertissement", "Veuillez sélectionner un lien.")
 
     def start_timer(self, duration):
         self.remaining_time = duration
+        self.start_time = self.remaining_time
         self.update_timer()
 
     def update_timer(self):
@@ -93,14 +106,34 @@ class WikiGameGUI:
         self.label_timer.config(text=f"Temps restant : {minutes:02}:{seconds:02}")
         
         if self.remaining_time <= 0:
+            self.stop_timer()
             messagebox.showinfo("Temps écoulé", "Temps écoulé ! La partie est terminée.")
-            self.root.quit()
+            self.show_score(0)
         else:
             self.remaining_time -= 1000
             self.root.after(1000, self.update_timer)
 
     def stop_timer(self):
         self.remaining_time = 0
+
+    def calculate_score(self):
+        elapsed_time = self.start_time - self.remaining_time
+        score = int(10000 / elapsed_time) if elapsed_time > 0 else 0
+        self.show_score(score)
+
+    def show_score(self, score):
+        messagebox.showinfo("Score", f"Votre score est de : {score} points.")
+
+    def reset_game(self):
+        self.start_page_name = ""
+        self.target_page_name = ""
+        self.current_page_name = ""
+        self.start_time = None
+        self.label_start.config(text="")
+        self.label_target.config(text="")
+        self.label_current.config(text="")
+        self.listbox_links.delete(0, tk.END)
+        self.label_timer.config(text="Temps restant : 10:00")
 
 if __name__ == "__main__":
     root = tk.Tk()
