@@ -1,3 +1,5 @@
+'''TP noté Scripting Python'''
+
 import tkinter as tk
 from tkinter import messagebox
 import requests
@@ -46,6 +48,9 @@ class WikiGameGUI:
         
         self.button_reset = tk.Button(self.root, text="Reset", command=self.reset_game)
         self.button_reset.pack(pady=10)
+        
+        self.button_quit = tk.Button(self.root, text="Quitter", command=self.root.quit)
+        self.button_quit.pack(pady=10)
     
     def start_game(self):
         self.start_page_name = self.get_random_page()
@@ -116,6 +121,7 @@ class WikiGameGUI:
     def stop_timer(self):
         self.remaining_time = 0
 
+    # Calculer le score du joueur (potentiellement a modifier après)
     def calculate_score(self):
         elapsed_time = self.start_time - self.remaining_time
         score = int(10000 / elapsed_time) if elapsed_time > 0 else 0
