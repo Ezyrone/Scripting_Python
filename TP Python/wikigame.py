@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import unquote
 
 WIKI_BASE_URL = 'https://fr.wikipedia.org/wiki/'
-GAME_DURATION = 10 * 60 * 1000  # Durée du jeu en millisecondes (10 minutes)
+GAME_DURATION = 10 * 60 * 1000  # Durée du jeu de 10 minutes
 
 class WikiGameGUI:
     def __init__(self, root):
