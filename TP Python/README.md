@@ -19,7 +19,8 @@ WikiGame est un jeu basé sur Python avec une interface graphique développée e
 ## Installation
 
 1. Cloner le repository : https://github.com/Ezyrone/Scripting_Python.git
-2. Installer les dépendenses:
+2. Se déplacer dans le fichier TP Python
+3. Installer les dépendenses:
         pip install requests beautifulsoup4 tkinter 
 
 ## Utilisation
