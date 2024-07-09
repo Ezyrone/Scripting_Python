@@ -152,8 +152,10 @@ class WikiGameGUI:
 
     # Calculer le score du joueur (potentiellement à modifier)
     def calculate_score(self):
-        elapsed_time = self.start_time - self.remaining_time
-        score = int(10000 / elapsed_time) if elapsed_time > 0 else 0
+        if self.moves_count > 0:
+            score = 10000 // self.moves_count
+        else:
+            score = 0
         self.show_score(score)
 
     def show_score(self, score):
