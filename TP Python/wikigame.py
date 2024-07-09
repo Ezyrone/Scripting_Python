@@ -1,7 +1,6 @@
-'''TP noté Scripting Python'''
-
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
+import random
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import unquote
@@ -18,6 +17,9 @@ class WikiGameGUI:
         self.target_page_name = ""
         self.current_page_name = ""
         self.start_time = None
+        self.moves_count = 0  # Compteur de coups
+        self.difficulty = tk.StringVar()
+        self.difficulty.set("Facile")  # Niveau de difficulté par défaut
         
         self.create_widgets()
     
@@ -25,7 +27,7 @@ class WikiGameGUI:
         self.label_title = tk.Label(self.root, text="WikiGame", font=("Arial", 18))
         self.label_title.pack(pady=10)
         
-        self.button_start = tk.Button(self.root, text="Start", command=self.start_game)
+        self.button_start = tk.Button(self.root, text="Démarrer", command=self.start_game)
         self.button_start.pack()
         
         self.label_start = tk.Label(self.root, text="", font=("Arial", 12))
@@ -43,28 +45,53 @@ class WikiGameGUI:
         self.button_choose = tk.Button(self.root, text="Choisir", command=self.choose_link)
         self.button_choose.pack()
         
+        self.label_moves = tk.Label(self.root, text="Coups : 0", font=("Arial", 12))
+        self.label_moves.pack(pady=10)
+        
         self.label_timer = tk.Label(self.root, text="Temps restant : 10:00", font=("Arial", 12))
         self.label_timer.pack(pady=10)
         
-        self.button_reset = tk.Button(self.root, text="Reset", command=self.reset_game)
+        self.optionmenu_difficulty = ttk.OptionMenu(self.root, self.difficulty, "Facile", "Facile", "Moyen", "Difficile")
+        self.optionmenu_difficulty.pack(pady=10)
+        
+        self.button_reset = tk.Button(self.root, text="Réinitialiser", command=self.reset_game)
         self.button_reset.pack(pady=10)
         
         self.button_quit = tk.Button(self.root, text="Quitter", command=self.root.quit)
         self.button_quit.pack(pady=10)
     
     def start_game(self):
-        self.start_page_name = self.get_random_page()
-        self.target_page_name = self.get_random_page()
+        difficulty_level = self.difficulty.get()
+        self.start_page_name = self.get_random_page(difficulty_level)
+        self.target_page_name = self.get_random_page(difficulty_level)
         self.current_page_name = self.start_page_name
         self.show_current_page()
         self.start_timer(GAME_DURATION)
     
-    def get_random_page(self):
-        # Obtenir une page Wikipédia aléatoire
-        response = requests.get('https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Page_au_hasard')
-        page_title = response.url.split('/')[-1]
-        return unquote(page_title)
-    
+    def get_random_page(self, difficulty_level):
+        if difficulty_level == "Facile":
+            # Obtenir une page Wikipédia aléatoire directement
+            response = requests.get('https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Page_au_hasard')
+            page_title = response.url.split('/')[-1]
+            return unquote(page_title)
+        elif difficulty_level == "Moyen":
+            # Obtenir une page à partir d'une catégorie aléatoire
+            random_category = random.choice(["Physique", "Biologie", "Géographie"])
+            url = f"https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Page_au_hasard_dans_la_cat%C3%A9gorie_{random_category}"
+            response = requests.get(url)
+            page_title = response.url.split('/')[-1]
+            return unquote(page_title)
+        elif difficulty_level == "Difficile":
+            # Obtenir une page via un lien interne plus spécifique
+            response = requests.get('https://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Accueil_principal')
+            soup = BeautifulSoup(response.content, 'html.parser')
+            link_div = soup.find("div", {"id": "mp-itn"})
+            link = link_div.find("a", href=True)
+            page_title = link['href'].split('/')[-1]
+            return unquote(page_title)
+        else:
+            raise ValueError("Niveau de difficulté non reconnu")
+
     def get_page_links(self, page_title):
         # Obtenir les liens d'une page Wikipédia
         url = f'{WIKI_BASE_URL}{page_title}'
@@ -94,6 +121,8 @@ class WikiGameGUI:
             new_page_name = self.get_page_links(self.current_page_name)[link_names[index]]
             self.current_page_name = new_page_name
             self.show_current_page()
+            self.moves_count += 1  # Incrémentation du compteur de coups
+            self.label_moves.config(text=f"Coups : {self.moves_count}")
             if self.current_page_name == self.target_page_name:
                 self.stop_timer()
                 self.calculate_score()
@@ -121,7 +150,7 @@ class WikiGameGUI:
     def stop_timer(self):
         self.remaining_time = 0
 
-    # Calculer le score du joueur (potentiellement a modifier après)
+    # Calculer le score du joueur (potentiellement à modifier)
     def calculate_score(self):
         elapsed_time = self.start_time - self.remaining_time
         score = int(10000 / elapsed_time) if elapsed_time > 0 else 0
@@ -135,12 +164,14 @@ class WikiGameGUI:
         self.target_page_name = ""
         self.current_page_name = ""
         self.start_time = None
+        self.moves_count = 0
         self.label_start.config(text="")
         self.label_target.config(text="")
         self.label_current.config(text="")
         self.listbox_links.delete(0, tk.END)
+        self.label_moves.config(text="Coups : 0")
         self.label_timer.config(text="Temps restant : 10:00")
-
+    
 if __name__ == "__main__":
     root = tk.Tk()
     app = WikiGameGUI(root)
